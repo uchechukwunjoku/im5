@@ -1,0 +1,283 @@
+<section data-ng-controller="StocksController" data-ng-init="find()" style="'height:100%;">
+  <md-content layout-wrap class="infiniteScrollContainer" style="height:100%"> 
+    <div flex layout="row" layout-align="center center">
+      <md-button class="md-fab verde" data-ng-click="setStatus('green')">{{greenItems.length || 0}}
+        <md-tooltip md-direction="bottom" md-autohide="true">
+          ideal
+        </md-tooltip>
+      </md-button>
+      <md-button class="md-fab amarillo" data-ng-click="setStatus('yellow')">{{yellowItems.length || 0}}
+        <md-tooltip md-direction="bottom" md-autohide="true">
+          regular
+        </md-tooltip>
+      </md-button>
+      <md-button class="md-fab rojo" data-ng-click="setStatus('red')">{{redItems.length || 0}}
+        <md-tooltip md-direction="bottom" md-autohide="true">
+          crí­tico
+        </md-tooltip>
+      </md-button>
+      <span flex></span>
+      <md-button class="md-icon-button md-mini" data-ng-click="eliminarFiltro()">
+          <md-icon><ng-md-icon icon="settings_backup_restore"></ng-md-icon></md-icon>
+          <md-tooltip md-direction="bottom" md-autohide="true">Eliminar Filtro</md-tooltip>
+      </md-button>
+    </div>
+
+    <div layout="row" layout-align="start center">
+      <md-menu>
+        <md-button class="md-icon-button">
+          <md-icon><ng-md-icon icon="local_shipping" size="30" ng-click="$mdOpenMenu()"></ng-md-icon></md-icon>
+          <md-tooltip md-direction="bottom" md-autohide="true">
+            Filtrar por Proveedor
+          </md-tooltip>
+        </md-button>
+        <md-menu-content>
+          <div ng-repeat="item in proveedores | filter: { deleted: false } | orderBy: 'name'">
+            <md-menu-item>
+              <md-button ng-click="filtrarProveedores(item)">
+                {{item.name}}
+              </md-button>
+            </md-menu-item>
+            <md-menu-divider></md-menu-divider>  
+          </div>
+        </md-menu-content>
+      </md-menu>
+      <div layout="row" flex>
+        <md-input-container flex style="margin-bottom:0">
+          <input type="text" data-ng-model="search.$" id="search" ng-disabled="false" placeholder="Ingrese aquí­ su búsqueda">
+        </md-input-container>
+      </div>
+    </div>
+
+    <div class="fab-ventas" layout="row" layout-align="end" ng-show="(productosAPedir.length>0) && (authentication.user.roles[0]!=='ventas')">
+      <md-button data-ui-sref="home.createPedido({tipo: 'compra'})" class="md-fab md-primary md-icon" aria-label="solicitud">
+        <md-icon><ng-md-icon icon="shopping_cart"></ng-md-icon></md-icon>
+        <md-tooltip>Nueva Solicitud</md-tooltip>
+      </md-button>
+    </div>
+
+    <div infinite-scroll="loadmoreProducts()" infinite-scroll-container="'.infiniteScrollContainer'" infinite-scroll-distance="2" infinite-scroll-disabled="loadingFinal || doneFinal">
+
+      <md-list ng-show="filtroActivo == false">
+        <div ng-repeat="item in products | filter: search | filter: status | filter : { deleted : false } | orderBy: 'category2.name'">
+          <div hide-xs>
+            <div layout="row">
+              <div layout="row" flex="90" layout-align="start center">
+                <div flex="5"><ng-md-icon icon="lens" ng-style="{'fill':'{{item.stockState.color}}'}"></ng-md-icon></div>
+                <div flex="10"><p>{{item.code}}</p></div>
+                <div flex="25"><p class="item-name" data-ng-bind="item.name"></p></div>
+                <div flex="10"><em>{{item.category2.name}}</em></div>
+                <div flex="10"><p><b>{{item.unitsInStock}} {{item.metric}}</b></p></div>
+                <div flex="10"><p ng-if="item.updated != undefined">{{item.updated | date:'short'}}</p></div>
+                <div flex="30">
+                  <md-progress-linear class="md-accent" ng-class="{'green': item.stockState.color === 'green', 'yellow': item.stockState.color === 'yellow', 'red': item.stockState.color === 'red'}" md-mode="determinate" value="{{item.stockState.percentage}}"></md-progress-linear>
+                </div>
+              </div>
+              <div flex="10" layout="row" layout-align="end center">
+                <md-checkbox
+                  ng-show="(filtroActivo) && (authentication.user.roles[0]!=='ventas')"
+                  ng-model="item.checkbox"
+                  aria-label="Pedir"
+                  ng-change="cambioCheckbox(item)"
+                  class="md-primary md-align-top-left">
+                </md-checkbox>
+                <md-button class="md-icon-button md-mini" aria-label="Pedido" ng-click="cambiar(item)" ng-if="tipoProducto !== 'p'">
+                  <md-icon>
+                    <ng-md-icon icon="add"></ng-md-icon>
+                    <md-tooltip>Pedido</md-tooltip>
+                  </md-icon>  
+                </md-button>
+                <md-button class="md-icon-button md-mini" aria-label="Agregar" ng-click="showDialog($event, item, 'agregar')">
+                  <md-icon>
+                    <ng-md-icon icon="keyboard_arrow_up"></ng-md-icon>
+                    <md-tooltip>Agregar</md-tooltip>
+                  </md-icon>
+                </md-button>
+                <md-button class="md-icon-button md-mini" aria-label="Suprimir" ng-click="showDialog($event, item, 'suprimir')">
+                  <md-icon>
+                    <ng-md-icon icon="keyboard_arrow_down"></ng-md-icon>
+                    <md-tooltip>Suprimir</md-tooltip>
+                  </md-icon>
+                </md-button>
+              </div>
+              <!-- <div flex="5"><p>{{item.unitsOnOrder}} {{item.metric}} pedidos </p></div> -->
+            </div>
+            <md-divider ng-if="!$last"></md-divider>
+          </div>
+          <div hide-gt-xs>
+            <div layout="column">
+              <div layout-padding></div>
+              <div layout="row" layout-align="center center">
+                <div flex="10"><md-icon><ng-md-icon icon="lens" ng-style="{'fill':'{{item.stockState.color}}'}"></ng-md-icon></md-icon></div>
+                <div><b class="item-name" data-ng-bind="item.name"></b></div>
+                <span flex></span>
+                <div><p>{{item.code || '0000'}}</p></div>
+              </div>
+
+              <div layout-margin></div>
+              
+              <div layout="row" layout-align="center center">
+                <div flex>
+                  <md-progress-linear class="md-accent" ng-class="{'green': item.stockState.color === 'green', 'yellow': item.stockState.color === 'yellow', 'red': item.stockState.color === 'red'}" md-mode="determinate" value="{{item.stockState.percentage}}"></md-progress-linear>
+                </div>
+              </div>
+              <div layout="row" layout-align="center center">
+                <b>{{item.unitsInStock}} {{item.metric}}</b>
+                <span flex></span>
+                <md-checkbox
+                  ng-show="(filtroActivo) && (authentication.user.roles[0]!=='ventas')"
+                  ng-model="item.checkbox"
+                  aria-label="Pedir"
+                  ng-change="cambioCheckbox(item)"
+                  class="md-primary md-align-top-left">
+                </md-checkbox>
+                <md-button class="md-icon-button md-mini" aria-label="Pedido" ng-click="cambiar(item)" ng-if="tipoProducto !== 'p'">
+                  <md-icon>
+                    <ng-md-icon size="20" icon="add"></ng-md-icon>
+                    <md-tooltip>Pedido</md-tooltip>
+                  </md-icon>  
+                </md-button>
+                <md-button class="md-icon-button md-mini" aria-label="Agregar" ng-click="showDialog($event, item, 'agregar')">
+                  <md-icon>
+                    <ng-md-icon size="20" icon="keyboard_arrow_up"></ng-md-icon>
+                    <md-tooltip>Agregar</md-tooltip>
+                  </md-icon>
+                </md-button>
+                <md-button class="md-icon-button md-mini" aria-label="Suprimir" ng-click="showDialog($event, item, 'suprimir')">
+                  <md-icon>
+                    <ng-md-icon size="20" icon="keyboard_arrow_down"></ng-md-icon>
+                    <md-tooltip>Suprimir</md-tooltip>
+                  </md-icon>
+                </md-button>
+              </div>
+              
+              <div layout="row" layout-align="start center">
+                <p ng-if="item.updated != undefined">
+                  <em class="md-caption">Ãšltima actualizaciÃ³n: </em>
+                  {{item.updated | date:'short'}}
+                </p>
+                <span flex></span>
+                <em class="inset">{{item.category2.name}}</em>
+              </div>
+              <!-- <div flex="5"><p>{{item.unitsOnOrder}} {{item.metric}} pedidos </p></div> -->
+            </div>
+            <div layout-padding></div>
+            <md-divider ng-if="!$last"></md-divider>
+            <div layout-padding></div>
+          </div>
+        </div>
+      </md-list>
+
+      <div class="highindex" ng-show="loadingFinal">
+        <div style="position: absolute; top: 30px; left: 50%;">
+            <md-progress-circular class="report-spinner" md-mode="indeterminate"></md-progress-circular>
+        </div>
+      </div>
+
+    </div>
+
+    <md-list ng-show="filtroActivo">
+      <div ng-repeat="item in products | orderBy:'category2' | filter: search | filter: status | filter : { deleted : false } | filter : { provider: { _id : idProveedorFiltro } }">
+        <div hide-xs>
+          <div layout="row" layout-align="start center">
+            <md-list-item flex="90" class="line-1-adjust" ng-click="verProd(item)">
+              <div flex="5"><md-icon><ng-md-icon icon="lens" ng-style="{'fill':'{{item.stockState.color}}'}"></ng-md-icon></md-icon></div>
+              <div flex="5"><p>{{item.code || '0000'}}</p></div>
+              <div flex="25"><p class="item-name" data-ng-bind="item.name"></p></div>
+              <div flex="10"><em>{{item.category2.name}}</em></div>
+              <div flex="10"><p><b>{{item.unitsInStock}} {{item.metric}}</b></p></div>
+              <div flex="10"><p ng-if="item.updated != undefined">{{item.updated | date:'short'}}</p></div>
+              <div flex layout-padding>
+                <md-progress-linear class="md-accent" ng-class="{'green': item.stockState.color === 'green', 'yellow': item.stockState.color === 'yellow', 'red': item.stockState.color === 'red'}" md-mode="determinate" value="{{item.stockState.percentage}}"></md-progress-linear>
+              </div>
+            </md-list-item>
+          
+            <!-- <md-button class="md-icon-button md-mini" aria-label="Pedido" ng-click="cambiar(item)" ng-if="tipoProducto !== 'p'">
+              <div style="top:7px;position:relative">
+                <ng-md-icon icon="add"></ng-md-icon>
+                <md-tooltip>Pedido</md-tooltip>
+              </div>  
+            </md-button> -->
+            <div flex="10" layout="row" layout-align="center center">
+              <md-icon>
+              <md-checkbox
+                  ng-show="(filtroActivo) && (authentication.user.roles[0]!=='ventas')"
+                  ng-model="item.checkbox"
+                  aria-label="Pedir"
+                  ng-change="cambioCheckbox(item)"
+                  class="md-primary">
+              </md-checkbox>
+              </md-icon>
+              <md-button class="md-icon-button md-mini" aria-label="Agregar" ng-click="showDialog($event, item, 'agregar')">
+                <md-icon><ng-md-icon icon="keyboard_arrow_up"></ng-md-icon></md-icon>
+                <md-tooltip>Agregar</md-tooltip>
+              </md-button>
+              <md-button class="md-icon-button md-mini" aria-label="Suprimir" ng-click="showDialog($event, item, 'suprimir')">
+                <md-icon><ng-md-icon icon="keyboard_arrow_down"></ng-md-icon></md-icon>
+                <md-tooltip>Suprimir</md-tooltip>
+              </md-button>
+            </div>
+            <md-divider ng-if="!$last"></md-divider>
+          </div>
+          <md-divider ng-if="!$last"></md-divider>
+        </div>
+        <div hide-gt-xs>
+          <div layout="column">
+            <div layout-padding></div>
+            <div layout="row" layout-align="center center">
+              <div flex="10"><md-icon><ng-md-icon icon="lens" ng-style="{'fill':'{{item.stockState.color}}'}"></ng-md-icon></md-icon></div>
+              <div flex="5"><p>{{item.code || '0000'}}</p></div>
+              <div flex><b class="item-name" data-ng-bind="item.name"></b></div>
+            </div>
+
+            <div layout-margin></div>
+            
+            <div layout="row" layout-align="center center">
+              <div flex>
+                <md-progress-linear class="md-accent" ng-class="{'green': item.stockState.color === 'green', 'yellow': item.stockState.color === 'yellow', 'red': item.stockState.color === 'red'}" md-mode="determinate" value="{{item.stockState.percentage}}"></md-progress-linear>
+              </div>
+            </div>
+            <div layout="row" layout-align="center center">
+              <b>{{item.unitsInStock}} {{item.metric}}</b>
+              <span flex></span>
+              <md-icon>
+              <md-checkbox
+                ng-show="(filtroActivo) && (authentication.user.roles[0]!=='ventas')"
+                ng-model="item.checkbox"
+                aria-label="Pedir"
+                ng-change="cambioCheckbox(item)"
+                class="md-primary md-align-top-left">
+              </md-checkbox>
+              </md-icon>
+              <md-button class="md-icon-button md-mini" aria-label="Agregar" ng-click="showDialog($event, item, 'agregar')">
+                <md-icon>
+                  <ng-md-icon size="20" icon="keyboard_arrow_up"></ng-md-icon>
+                  <md-tooltip>Agregar</md-tooltip>
+                </md-icon>
+              </md-button>
+              <md-button class="md-icon-button md-mini" aria-label="Suprimir" ng-click="showDialog($event, item, 'suprimir')">
+                <md-icon>
+                  <ng-md-icon size="20" icon="keyboard_arrow_down"></ng-md-icon>
+                  <md-tooltip>Suprimir</md-tooltip>
+                </md-icon>
+              </md-button>
+            </div>
+            
+            <div layout="row" layout-align="start center">
+              <p ng-if="item.updated != undefined">
+                <em class="md-caption">Ãšltima actualizaciÃ³n: </em>
+                {{item.updated | date:'short'}}
+              </p>
+              <span flex></span>
+              <em class="inset">{{item.category2.name}}</em>
+            </div>
+            <!-- <div flex="5"><p>{{item.unitsOnOrder}} {{item.metric}} pedidos </p></div> -->
+          </div>
+          <div layout-padding></div>
+          <md-divider ng-if="!$last"></md-divider>
+          <div layout-padding></div>
+        </div>
+      </div>
+    </md-list>
+  </md-content>
+</section>

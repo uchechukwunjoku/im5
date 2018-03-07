@@ -1,0 +1,102 @@
+<section style="height: 100%">
+
+    <md-tabs md-dynamic-height md-border-bottom>
+        <md-tab label="COMPRAS" md-on-select="ctrl.loadCompras()">
+            <md-tabs md-dynamic-height md-border-bottom style="background:#f6f6f6">
+                <md-tab label="General">
+                    <md-content class="report-container">
+                        <div ng-show="ctrl.isDayLoading" class="report-overlay">
+                            <md-progress-circular class="report-spinner" md-mode="indeterminate"></md-progress-circular>
+                        </div>
+                        <div layout-padding></div>
+                        <div layout="row">
+                            <md-icon><ng-md-icon icon="search"></ng-md-icon></md-icon>
+                            <md-input-container md-no-float flex>
+                                <label for="search">Ingrese aquí su búsqueda</label>
+                                <input type="text" data-ng-model="search.$" id="search" ng-disabled="false">
+                            </md-input-container>
+                        </div>
+                       <md-content class="infiniteScrollContainer" style="height: 100%">
+                            <md-list infinite-scroll="ctrl.loadmore()" infinite-scroll-container="'.infiniteScrollContainer'" infinite-scroll-distance="0" infinite-scroll-disabled="ctrl.loading || ctrl.finished">
+                                <md-list-item>
+                                    <strong flex="50" ng-if="tipoFinanza == 'debe'">Proveedor</strong>
+                                    <strong flex="30" ng-if="tipoFinanza == 'debe'">A pagar</strong>
+                                    
+                                    <strong flex="50" ng-if="tipoFinanza == 'haber'">Cliente</strong>
+                                    <strong flex="30" ng-if="tipoFinanza == 'haber'">A cobrar</strong>
+                                    
+                                    <strong flex="20">Último movimiento</strong>
+                                </md-list-item>
+                                <md-divider></md-divider>
+                                <md-list-item ng-repeat="item in ctrl.finanzas | filter:search" ng-click="ctrl.getIntoFinanzaDetail(item)"  class="min-height md-ink-ripple">
+                                    <p flex="50" class="item-name" ng-if="item.tipoFinanza == 'debe'">
+                                        {{item.provider.name}}</p>
+                                    <p flex="50" class="item-name" ng-if="item.tipoFinanza == 'haber'">
+                                        {{item.client.name}}</p>
+                                    <strong flex="30">{{item.saldo | currency}}</strong>
+                                    <p hide-xs flex="20">{{item.update | date:'MMM d, y HH:mm'}}hs.</p>
+                                    <p hide-gt-xs flex="20">{{item.update | date:'MM/d/yy'}}</p>
+                                    <!-- <span flex></span> -->
+                                    <md-divider ng-if="!$last"></md-divider>
+                                </md-list-item>
+                            </md-list>
+                        </md-content>                             
+                    
+                    </md-content>
+                </md-tab>
+               
+            </md-tabs>
+        </md-tab>
+
+        <md-tab label="COSTOS INDIRECTOS" md-on-select="ctrl.loadCostIndirecto()">
+            <md-tabs md-dynamic-height md-border-bottom style="background:#f6f6f6">
+                <md-tab label="General">
+                    <md-content class="report-container">
+                        <div ng-show="ctrl.isDayLoading" class="report-overlay">
+                            <md-progress-circular class="report-spinner" md-mode="indeterminate"></md-progress-circular>
+                        </div>
+                        <div layout-padding></div>
+                        <div layout="row">
+                            <md-icon><ng-md-icon icon="search"></ng-md-icon></md-icon>
+                            <md-input-container md-no-float flex>
+                                <label for="search">Ingrese aquí su búsqueda</label>
+                                <input type="text" data-ng-model="search.$" id="search" ng-disabled="false">
+                            </md-input-container>
+                        </div>
+                       <md-content class="infiniteScrollContainer" style="height: 100%">
+                            <md-list infinite-scroll="ctrl.loadmore()" infinite-scroll-container="'.infiniteScrollContainer'" infinite-scroll-distance="0" infinite-scroll-disabled="ctrl.loading || ctrl.finished">
+                                <md-list-item>
+                                    <strong flex="50" ng-if="tipoFinanza == 'debe'">Servicios</strong>
+                                    <strong flex="30" ng-if="tipoFinanza == 'debe'">Facturas</strong>
+                                    
+                                    <!--<strong flex="50" ng-if="tipoFinanza == 'haber'">Cliente</strong>
+                                    <strong flex="30" ng-if="tipoFinanza == 'haber'">A cobrar</strong>-->
+                                    
+                                    <strong flex="20">Último movimiento</strong>
+                                </md-list-item>
+                                <md-divider></md-divider>
+                                <md-list-item ng-repeat="item in ctrl.costosIndirectos | filter:search"   class="min-height md-ink-ripple"><!--ng-click="ctrl.getIntoFinanzaDetail(item)"-->
+                                    <p flex="50" class="item-name" >
+                                        {{item.serviceName}}</p>
+                                    <!--<p flex="50" class="item-name" ng-if="item.tipoFinanza == 'haber'">
+                                        {{item.client.name}}</p>-->
+                                    <strong flex="30">{{item.total | currency}}</strong>
+                                    <p hide-xs flex="20">{{item.facturaDate | date:'MMM d, y HH:mm'}}hs.</p>
+                                    <p hide-gt-xs flex="20">{{item.facturaDate | date:'MM/d/yy'}}</p>
+                                    <!-- <span flex></span> -->
+                                    <md-divider ng-if="!$last"></md-divider>
+                                </md-list-item>
+                            </md-list>
+                        </md-content>                        
+                     </md-content>   
+                </md-tab>
+               
+            </md-tabs>
+        </md-tab>
+    </md-tabs>
+
+    
+</section>
+
+
+<!-- data-ui-sref="home.viewFinanza({finanzaId:item._id})" -->
